@@ -10,7 +10,10 @@
 import os, sys, glob, itertools, re
 
 _CIMEROOT = os.getenv("CIMEROOT")
-sys.path.append(os.path.join(_CIMEROOT, "scripts", "Tools"))
+if os.path.isdir(os.path.join(_CIMEROOT, "scripts", "Tools")):
+    sys.path.append(os.path.join(_CIMEROOT, "scripts", "Tools"))
+elif os.path.isdir(os.path.join(_CIMEROOT, "CIME", "Tools")):
+    sys.path.append(os.path.join(_CIMEROOT, "CIME", "Tools"))
 
 from standard_script_setup import *
 from CIME.case import Case
@@ -26,7 +29,6 @@ logger = logging.getLogger(__name__)
 ###############################################################################
 def _create_drv_namelists(case, infile, confdir, nmlgen, files):
 ###############################################################################
-
     #--------------------------------
     # Set up config dictionary
     #--------------------------------
@@ -216,6 +218,7 @@ def write_seq_maps_file(case, nmlgen, confdir):
     gridvalue = {}
     ignore_component = {}
     exclude_list = ["CPL","ESP"]
+
     for comp_class in case.get_values("COMP_CLASSES"):
         if comp_class not in exclude_list:
             gridvalue[comp_class.lower()] = case.get_value(comp_class + "_GRID" )
@@ -233,7 +236,7 @@ def write_seq_maps_file(case, nmlgen, confdir):
     # TODO: for rof2ocn_fmapname -needs to be resolved since this is currently
     # used in prep_ocn_mod.F90 if flood_present is True - this is in issue #1908.
     # The following is only approriate for config_grids.xml version 2.0 or later
-    grid_version = Grids(comp_interface="mct").get_version()
+    grid_version = Grids(comp_interface="mct", check_schema=False).get_version()
     if grid_version >= 2.0:
         group_variables = nmlgen.get_group_variables("seq_maps")
         for name in group_variables:
@@ -381,7 +384,6 @@ def buildnml(case, caseroot, component):
 
     expect (os.path.isdir(user_xml_dir),
             "user_xml_dir {} does not exist ".format(user_xml_dir))
-
     files = Files(comp_interface="mct")
     definition_file = [files.get_value("NAMELIST_DEFINITION_FILE", {"component": "drv"})]
 
